@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curated Outfit Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="badge">RetailNext Private Preview</div>
+      <h1>Answer three calm questions. We hand you the right rack.</h1>
+      <p class="lede">A quiet, curated path for well-heeled shoppers. No endless grids. No noise.</p>
+    </header>
+
+    <section class="flow" id="question-flow">
+      <div class="step-bar">
+        <div class="step-fill" id="step-fill"></div>
+      </div>
+      <div class="step-count" id="step-count">Step 1 of 3</div>
+      <div class="card" id="question-card">
+        <p class="prompt" id="prompt">I am a...</p>
+        <input id="text-input" class="text-input" type="text" autocomplete="off" placeholder="Type your answer" />
+        <div class="options" id="options" aria-label="Suggested answers"></div>
+        <button class="primary" id="next-btn" disabled>Continue</button>
+      </div>
+    </section>
+
+    <section class="catalog" id="catalog" hidden>
+      <div class="catalog-header">
+        <p class="eyebrow">Your curated rail</p>
+        <h2>Pieces that fit your signals</h2>
+        <p class="lede">We matched your answers to pieces in-store now. Pickup priority. Quiet luxury, India-aware.</p>
+      </div>
+      <div class="grid" id="catalog-grid"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
