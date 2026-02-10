@@ -1,0 +1,23 @@
+# Story Index
+
+- ST-01: Intake UI (3-step flow with profile prefill/override)
+- ST-02: Results Grid + Promos
+- ST-03: Fulfillment Rail (pickup/shipping)
+- ST-04: Detail Overlay (size/store/returns/reserve)
+- ST-05: Alternates & Notify-me
+- ST-06: Intent Parse API
+- ST-07: Retrieval API (vector + filters)
+- ST-08: Fulfillment API (ETA/cutoffs)
+- ST-09: Guardrail/Suitability Check
+- ST-10: Profile Service
+- ST-11: Catalog Ingest Job
+- ST-12: Inventory Sync Job
+- ST-13: Shipping SLA Loader
+- ST-14: Cloud Run + CI/CD
+- ST-15: Networking (VPC/Armor)
+- ST-16: Monitoring/Logging
+- ST-17: Intent Prompt Pack
+- ST-18: Suitability Prompt Pack
+- ST-19: Image Handling Policy
+- ST-20: Consent & Cookies
+- ST-21: Automated Tests
