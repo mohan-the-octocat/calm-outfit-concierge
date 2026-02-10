@@ -11,21 +11,33 @@
 </head>
 <body>
   <div class="page">
+    <div id="consent-banner" class="consent" role="dialog" aria-label="Consent">
+      <p>We can save your profile answers for faster checkout recommendations.</p>
+      <div>
+        <button id="consent-accept" class="secondary">Opt in</button>
+        <button id="consent-reject" class="secondary">Opt out</button>
+      </div>
+    </div>
+
     <header class="hero">
       <div class="badge">RetailNext Private Preview</div>
       <h1>Answer three calm questions. We hand you the right rack.</h1>
       <p class="lede">A quiet, curated path for well-heeled shoppers. No endless grids. No noise.</p>
+      <button id="reset-data" class="secondary">Reset saved data</button>
     </header>
 
     <section class="flow" id="question-flow">
-      <div class="step-bar">
-        <div class="step-fill" id="step-fill"></div>
-      </div>
+      <div class="step-bar"><div class="step-fill" id="step-fill"></div></div>
       <div class="step-count" id="step-count">Step 1 of 3</div>
       <div class="card" id="question-card">
-        <p class="prompt" id="prompt">I am a...</p>
+        <p class="prompt" id="prompt">I am...</p>
+        <p id="profile-chip" class="chip" hidden></p>
+        <label for="text-input" class="sr-only">Answer input</label>
         <input id="text-input" class="text-input" type="text" autocomplete="off" placeholder="Type your answer" />
         <div class="options" id="options" aria-label="Suggested answers"></div>
+        <label for="image-url">Optional image URL</label>
+        <input id="image-url" class="text-input" type="url" placeholder="https://example.com/look.jpg" />
+        <p id="image-error" class="error" hidden>Please provide a valid image URL ending in jpg/png/webp.</p>
         <button class="primary" id="next-btn" disabled>Continue</button>
       </div>
     </section>
@@ -34,12 +46,31 @@
       <div class="catalog-header">
         <p class="eyebrow">Your curated rail</p>
         <h2>Pieces that fit your signals</h2>
-        <p class="lede">We matched your answers to pieces in-store now. Pickup priority. Quiet luxury, India-aware.</p>
+        <p id="promo-chip" class="chip" hidden>Promo unlocked: complimentary alteration on pickup</p>
       </div>
+      <p id="fallback-state" hidden>No exact matches. Try broadening filters or notify me for restocks.</p>
       <div class="grid" id="catalog-grid"></div>
+      <button id="more-btn" class="secondary" hidden>See more</button>
+    </section>
+
+    <section>
+      <h3>Alternates</h3>
+      <div id="alternates" class="options"></div>
+      <form id="notify-form">
+        <label for="notify-input">Notify me (email or phone)</label>
+        <input id="notify-input" class="text-input" />
+        <p id="notify-error" class="error" hidden>Enter a valid email or phone number.</p>
+        <p id="notify-success" class="success" hidden>Thanks, we will notify you.</p>
+        <button class="primary" type="submit">Notify me</button>
+      </form>
     </section>
   </div>
 
-  <script src="app.js"></script>
+  <dialog id="detail-overlay" aria-label="Item details" hidden>
+    <button class="close secondary" aria-label="Close details">Close</button>
+    <div id="detail-content"></div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
