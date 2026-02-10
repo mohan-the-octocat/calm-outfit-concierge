@@ -1,0 +1,12 @@
+[
+  {
+    "name": "wedding_guest",
+    "input": "I am a woman, I need a wedding guest look, I like crafted textiles",
+    "expected": {"identity": "woman", "occasion": "wedding guest look", "vibe": "crafted textiles"}
+  },
+  {
+    "name": "boardroom",
+    "input": "man boardroom ready minimal and tailored",
+    "expected": {"identity": "man", "occasion": "boardroom ready", "vibe": "minimal and tailored"}
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "occasion_mismatch",
+    "intent": {"occasion": "wedding guest look", "vibe": "crafted textiles"},
+    "item": {"tag": "gym wear", "vibe": "sport"},
+    "expected": {"suitable": false}
+  },
+  {
+    "name": "season_match",
+    "intent": {"occasion": "summer resort", "vibe": "comfort first"},
+    "item": {"tag": "summer resort", "vibe": "comfort first"},
+    "expected": {"suitable": true}
+  }
+]

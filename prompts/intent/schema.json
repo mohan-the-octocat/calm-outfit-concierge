@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["identity", "occasion", "vibe"],
+  "additionalProperties": false,
+  "properties": {
+    "identity": { "type": "string", "minLength": 1 },
+    "occasion": { "type": "string", "minLength": 1 },
+    "vibe": { "type": "string", "minLength": 1 },
+    "imageAttributes": { "type": "array", "items": { "type": "string" } }
+  }
+}
