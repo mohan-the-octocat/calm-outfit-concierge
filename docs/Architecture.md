@@ -43,14 +43,14 @@
 ### 4.1 User Flow
 ```mermaid
 flowchart LR
-  U[User] --> FE[Cloud CDN + Storage (Web)]
+  U[User] --> FE[Cloud CDN & Storage]
   FE --> API[Cloud Run API]
   API --> OAI[OpenAI APIs]
   API --> DB[(AlloyDB/pgvector)]
   API --> FS[Firestore Profiles]
   API --> INV[Inventory Tables]
   API --> SLA[Shipping SLA]
-  API --> GCS[Cloud Storage (images/assets)]
+  API --> GCS[Cloud Storage assets]
   API --> MON[Cloud Logging/Monitoring]
   API --> RESP[Response to FE]
 ```
