@@ -1,79 +1,27 @@
-const steps = [
-  {
-    prompt: 'I am a...',
-    key: 'identity',
-    options: ['Woman', 'Man', 'Non-binary', 'Shopping for someone else'],
-  },
-  {
-    prompt: 'I need a...',
-    key: 'occasion',
-    options: [
-      'Wedding guest look',
-      'Boardroom ready',
-      'Brunch smart-casual',
-      'Evening cocktail',
-      'Summer resort',
-      'Festive Indian wear',
-    ],
-  },
-  {
-    prompt: 'I like...',
-    key: 'vibe',
-    options: [
-      'Minimal and tailored',
-      'Bold colors',
-      'Monochrome luxe',
-      'Crafted textiles',
-      'Understated with a statement accessory',
-      'Comfort first',
-    ],
-  },
-];
+import {
+  steps,
+  catalog,
+  filterCatalog,
+  getArrivalLabel,
+  isValidImageUrl,
+  limitHero,
+  sortFulfillment,
+  validateNotify,
+} from './logic.mjs';
 
-const catalog = [
-  {
-    title: 'Champagne silk kurta set',
-    tag: 'Festive Indian wear',
-    vibe: 'Understated with a statement accessory',
-    price: 'Rs 14,500',
-    pickup: 'Ready for pickup today in Mumbai',
-  },
-  {
-    title: 'Midnight linen bandhgala',
-    tag: 'Evening cocktail',
-    vibe: 'Minimal and tailored',
-    price: 'Rs 18,900',
-    pickup: 'Reserve for Delhi pickup in 2 hours',
-  },
-  {
-    title: 'Ivory chikankari saree',
-    tag: 'Wedding guest look',
-    vibe: 'Crafted textiles',
-    price: 'Rs 22,000',
-    pickup: 'Ready for pickup today in Lucknow',
-  },
-  {
-    title: 'Charcoal Italian suit',
-    tag: 'Boardroom ready',
-    vibe: 'Minimal and tailored',
-    price: 'Rs 32,000',
-    pickup: 'Same-day tailoring slot in Bangalore',
-  },
-  {
-    title: 'Terracotta co-ord set',
-    tag: 'Brunch smart-casual',
-    vibe: 'Bold colors',
-    price: 'Rs 9,800',
-    pickup: 'Pickup today in Hyderabad',
-  },
-  {
-    title: 'Sea-foam resort dress',
-    tag: 'Summer resort',
-    vibe: 'Comfort first',
-    price: 'Rs 11,400',
-    pickup: 'Ready tomorrow in Goa',
-  },
-];
+const storageKey = 'concierge-profile';
+const consentKey = 'concierge-consent';
+const state = {
+  currentStep: 0,
+  answers: {},
+  currentChoice: '',
+  consent: localStorage.getItem(consentKey) || 'pending',
+  profile: JSON.parse(localStorage.getItem(storageKey) || '{}'),
+  visibleCount: 6,
+  selectedItem: null,
+  holdUntil: null,
+  holdTimer: null,
+};
 
 const promptEl = document.getElementById('prompt');
 const optionsEl = document.getElementById('options');
@@ -81,93 +29,252 @@ const nextBtn = document.getElementById('next-btn');
 const stepCountEl = document.getElementById('step-count');
 const stepFillEl = document.getElementById('step-fill');
 const textInput = document.getElementById('text-input');
+const imageInput = document.getElementById('image-url');
+const imageError = document.getElementById('image-error');
+const profileChip = document.getElementById('profile-chip');
+const flowSection = document.getElementById('question-flow');
 const catalogSection = document.getElementById('catalog');
 const catalogGrid = document.getElementById('catalog-grid');
-const flowSection = document.getElementById('question-flow');
+const promoChip = document.getElementById('promo-chip');
+const moreBtn = document.getElementById('more-btn');
+const fallbackState = document.getElementById('fallback-state');
+const overlay = document.getElementById('detail-overlay');
+const detailContent = document.getElementById('detail-content');
+const alternates = document.getElementById('alternates');
+const notifyForm = document.getElementById('notify-form');
+const notifyInput = document.getElementById('notify-input');
+const notifyError = document.getElementById('notify-error');
+const notifySuccess = document.getElementById('notify-success');
+const consentBanner = document.getElementById('consent-banner');
+const consentAccept = document.getElementById('consent-accept');
+const consentReject = document.getElementById('consent-reject');
+const resetBtn = document.getElementById('reset-data');
 
-let currentStep = 0;
-const answers = {};
-let currentChoice = '';
-
-function renderStep() {
-  const step = steps[currentStep];
-  promptEl.textContent = step.prompt;
-  stepCountEl.textContent = `Step ${currentStep + 1} of ${steps.length}`;
-  stepFillEl.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
-  optionsEl.innerHTML = '';
-  currentChoice = answers[step.key] || '';
-  textInput.value = currentChoice;
-
-  step.options.forEach((opt) => {
-    const button = document.createElement('button');
-    button.className = 'option';
-    button.type = 'button';
-    button.textContent = opt;
-    if (opt === currentChoice) button.classList.add('active');
-    button.addEventListener('click', () => {
-      currentChoice = opt;
-      document.querySelectorAll('.option').forEach((el) => el.classList.remove('active'));
-      button.classList.add('active');
-      nextBtn.disabled = false;
-      textInput.value = opt;
-    });
-    optionsEl.appendChild(button);
-  });
-
-  nextBtn.disabled = !currentChoice;
+function saveProfile() {
+  if (state.consent === 'accepted') {
+    localStorage.setItem(storageKey, JSON.stringify(state.answers));
+  }
 }
 
-function showCatalog() {
-  flowSection.hidden = true;
-  catalogSection.hidden = false;
+function applyPrefill() {
+  const step = steps[state.currentStep];
+  state.currentChoice = state.answers[step.key] || state.profile[step.key] || '';
+  if (state.profile[step.key]) {
+    profileChip.hidden = false;
+    profileChip.textContent = `Prefilled: ${state.profile[step.key]} (editable)`;
+  } else {
+    profileChip.hidden = true;
+  }
+}
 
-  const selections = {
-    identity: answers.identity,
-    occasion: answers.occasion,
-    vibe: answers.vibe,
-  };
+function renderStep() {
+  const step = steps[state.currentStep];
+  promptEl.textContent = step.prompt;
+  stepCountEl.textContent = `Step ${state.currentStep + 1} of ${steps.length}`;
+  stepFillEl.style.width = `${((state.currentStep + 1) / steps.length) * 100}%`;
 
-  const curated = catalog.filter((item) => {
-    const matchesVibe = item.vibe === selections.vibe || selections.vibe === 'Understated with a statement accessory' && item.vibe.includes('statement');
-    const matchesOccasion = item.tag === selections.occasion || item.tag === 'Festive Indian wear' && selections.occasion?.includes('Festive');
-    return matchesVibe || matchesOccasion;
+  applyPrefill();
+  textInput.value = state.currentChoice;
+  optionsEl.innerHTML = '';
+
+  step.options.forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.type = 'button';
+    btn.textContent = opt;
+    btn.setAttribute('aria-label', `Select ${opt}`);
+    if (opt === state.currentChoice) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      state.currentChoice = opt;
+      textInput.value = opt;
+      renderStep();
+      nextBtn.focus();
+    });
+    optionsEl.appendChild(btn);
   });
 
-  const picks = curated.length ? curated : catalog.slice(0, 4);
+  nextBtn.disabled = !state.currentChoice;
+}
+
+function renderResults() {
+  flowSection.hidden = true;
+  catalogSection.hidden = false;
+  promoChip.hidden = false;
+
+  let picks = limitHero(filterCatalog(catalog, state.answers));
+  if (!Array.isArray(picks)) picks = [];
+
+  if (!picks.length) {
+    fallbackState.hidden = false;
+    catalogGrid.innerHTML = '';
+    moreBtn.hidden = true;
+    return;
+  }
+
+  fallbackState.hidden = true;
+  const visibleItems = picks.slice(0, state.visibleCount);
+  moreBtn.hidden = picks.length <= 6;
+  moreBtn.textContent = state.visibleCount > 6 ? 'Show less' : 'See more';
 
   catalogGrid.innerHTML = '';
-  picks.forEach((item) => {
+  visibleItems.forEach((item) => {
+    const sorted = sortFulfillment(item.fulfillment || [{ type: 'pickup', label: 'Pickup', etaHours: 2, cutoff: '23:59', timezone: 'Asia/Kolkata' }]);
+    const fastest = sorted[0];
     const card = document.createElement('article');
-    card.className = 'item-card';
+    card.className = `item-card ${item.hero ? 'hero-card' : ''}`;
     card.innerHTML = `
-      <div class="item-tag">${item.tag}</div>
+      <div class="badges">
+        <span class="item-tag">${item.tag}</span>
+        <span class="availability">${item.inventoryStatus}</span>
+        ${item.freshness ? `<span class="freshness">${item.freshness}</span>` : ''}
+      </div>
       <h3 class="item-title">${item.title}</h3>
-      <div class="item-meta">${item.vibe}</div>
       <div class="item-price">${item.price}</div>
-      <div class="item-cta"><span>Pickup</span>${item.pickup}</div>
+      <div class="item-cta">Fastest: ${getArrivalLabel(fastest)}</div>
+      <button class="secondary open-detail" data-id="${item.id}" aria-label="Open details for ${item.title}">Details</button>
     `;
     catalogGrid.appendChild(card);
   });
 }
 
+function openDetail(itemId) {
+  const item = catalog.find((entry) => entry.id === itemId);
+  if (!item) return;
+  state.selectedItem = item;
+  const defaultSize = item.sizes[0];
+  const defaultStore = item.stores[0];
+  state.holdUntil = Date.now() + 10 * 60 * 1000;
+
+  detailContent.innerHTML = `
+    <h3>${item.title}</h3>
+    <p>${item.returnPolicy}</p>
+    <p>${item.price}${item.promo ? ` · ${item.promo}` : ''}</p>
+    <label>Size
+      <select id="detail-size" aria-label="Choose size">
+        ${item.sizes.map((size) => `<option ${item.unavailableSizes.includes(size) ? 'disabled' : ''}>${size}${item.unavailableSizes.includes(size) ? ' (unavailable)' : ''}</option>`).join('')}
+      </select>
+    </label>
+    <label>Store
+      <select id="detail-store" aria-label="Choose store">${item.stores.map((store) => `<option>${store}</option>`).join('')}</select>
+    </label>
+    <p id="hold-timer">Hold expires in 10:00</p>
+    <a id="detail-cta" class="primary" href="${item.checkoutUrl}&size=${encodeURIComponent(defaultSize)}&store=${encodeURIComponent(defaultStore)}">Reserve for pickup</a>
+  `;
+
+  overlay.hidden = false;
+  overlay.querySelector('.close').focus();
+  const detailSize = document.getElementById('detail-size');
+  const detailStore = document.getElementById('detail-store');
+  const detailCta = document.getElementById('detail-cta');
+
+  function syncCta() {
+    detailCta.href = `${item.checkoutUrl}&size=${encodeURIComponent(detailSize.value.replace(' (unavailable)', ''))}&store=${encodeURIComponent(detailStore.value)}`;
+  }
+
+  detailSize.addEventListener('change', syncCta);
+  detailStore.addEventListener('change', syncCta);
+
+  clearInterval(state.holdTimer);
+  state.holdTimer = setInterval(() => {
+    const diff = state.holdUntil - Date.now();
+    const timerEl = document.getElementById('hold-timer');
+    if (diff <= 0) {
+      timerEl.textContent = 'Hold released';
+      detailCta.classList.add('disabled-link');
+      detailCta.setAttribute('aria-disabled', 'true');
+      clearInterval(state.holdTimer);
+      return;
+    }
+    const minutes = String(Math.floor(diff / 60000)).padStart(2, '0');
+    const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    timerEl.textContent = `Hold expires in ${minutes}:${seconds}`;
+  }, 1000);
+
+  const alternateItems = catalog.filter((entry) => entry.id !== item.id && (entry.tag === item.tag || entry.vibe === item.vibe)).slice(0, 3);
+  alternates.innerHTML = '';
+  alternateItems.forEach((alt) => {
+    const button = document.createElement('button');
+    button.className = 'option';
+    button.textContent = alt.title;
+    button.addEventListener('click', () => openDetail(alt.id));
+    alternates.appendChild(button);
+  });
+}
+
 nextBtn.addEventListener('click', () => {
-  const step = steps[currentStep];
-  answers[step.key] = currentChoice || textInput.value.trim();
-
-  if (currentStep < steps.length - 1) {
-    currentStep += 1;
+  const step = steps[state.currentStep];
+  state.answers[step.key] = state.currentChoice || textInput.value.trim();
+  saveProfile();
+  if (state.currentStep < steps.length - 1) {
+    state.currentStep += 1;
     renderStep();
-  } else {
-    showCatalog();
+    return;
+  }
+  if (!isValidImageUrl(imageInput.value.trim())) {
+    imageError.hidden = false;
+    return;
+  }
+  imageError.hidden = true;
+  state.answers.imageUrl = imageInput.value.trim();
+  renderResults();
+});
+
+textInput.addEventListener('input', (event) => {
+  state.currentChoice = event.target.value.trim();
+  nextBtn.disabled = !state.currentChoice;
+});
+
+moreBtn.addEventListener('click', () => {
+  state.visibleCount = state.visibleCount > 6 ? 6 : catalog.length;
+  renderResults();
+});
+
+catalogGrid.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target.matches('.open-detail')) {
+    openDetail(target.dataset.id);
   }
 });
 
-textInput.addEventListener('input', (e) => {
-  currentChoice = e.target.value.trim();
-  if (!currentChoice) {
-    document.querySelectorAll('.option').forEach((el) => el.classList.remove('active'));
-  }
-  nextBtn.disabled = !currentChoice;
+overlay.querySelector('.close').addEventListener('click', () => {
+  overlay.hidden = true;
+  clearInterval(state.holdTimer);
 });
+
+notifyForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!validateNotify(notifyInput.value.trim())) {
+    notifyError.hidden = false;
+    notifySuccess.hidden = true;
+    return;
+  }
+  notifyError.hidden = true;
+  notifySuccess.hidden = false;
+  notifyForm.querySelector('button').disabled = true;
+});
+
+consentAccept.addEventListener('click', () => {
+  state.consent = 'accepted';
+  localStorage.setItem(consentKey, 'accepted');
+  consentBanner.hidden = true;
+  saveProfile();
+});
+
+consentReject.addEventListener('click', () => {
+  state.consent = 'rejected';
+  localStorage.setItem(consentKey, 'rejected');
+  localStorage.removeItem(storageKey);
+  consentBanner.hidden = true;
+});
+
+resetBtn.addEventListener('click', () => {
+  localStorage.removeItem(storageKey);
+  localStorage.removeItem(consentKey);
+  window.location.reload();
+});
+
+if (state.consent !== 'pending') {
+  consentBanner.hidden = true;
+}
 
 renderStep();
